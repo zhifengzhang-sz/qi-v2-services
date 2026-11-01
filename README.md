@@ -4,7 +4,7 @@ Infrastructure services for the Qi v2 trading platform.
 
 ## Services
 
-- **Database**: ClickHouse and TimescaleDB configurations
+- **Database**: TimescaleDB configurations
 - **Streaming**: RedPanda (Kafka-compatible) setup
 - **Docker Compose**: Complete service orchestration
 
@@ -23,7 +23,6 @@ docker compose down
 
 ## Database Services
 
-- **ClickHouse**: High-performance columnar database for analytics
 - **TimescaleDB**: Time-series database for market data storage
 
 ## Streaming Services
