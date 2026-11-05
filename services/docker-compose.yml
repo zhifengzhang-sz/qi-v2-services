@@ -65,6 +65,31 @@ services:
       timeout: 5s
       retries: 5
 
+  # ClickHouse (Column-oriented database for analytics), on the 26.8 LTS line
+  # No CLICKHOUSE_DB: it starts with only the server's own databases. The user and password are for development only.
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.8.34.13
+    container_name: qicore-clickhouse
+    environment:
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: password
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    networks:
+      - qicore-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Redis (Caching and real-time data)
   redis:
     image: redis:8.8.3-alpine
@@ -100,6 +125,7 @@ services:
 volumes:
   redpanda_data:
   timescaledb_data:
+  clickhouse_data:
   redis_data:
 
 networks:

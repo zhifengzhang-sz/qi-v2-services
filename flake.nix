@@ -2,7 +2,7 @@
   # The infrastructure stack as a product (README.md): the package stack holds the Compose file and Console's config
   # at their relative paths, and bin/stack runs docker compose on that file in the store. The common flake, qi-v2,
   # gives the one nixpkgs of every project.
-  description = "qi-v2-services: the infrastructure stack (Redpanda, Redpanda Console, TimescaleDB, Redis)";
+  description = "qi-v2-services: the infrastructure stack (Redpanda, Redpanda Console, TimescaleDB, ClickHouse, Redis)";
 
   inputs.qi-v2.url = "github:zhifengzhang-sz/qi-v2-nix?dir=qi-v2";
   inputs.nixpkgs.follows = "qi-v2/nixpkgs";
@@ -10,7 +10,7 @@
   outputs = { self, nixpkgs, qi-v2 }:
     let
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
-      version = "0.1.0";
+      version = "0.2.0";
       src = nixpkgs.lib.fileset.toSource {
         root = ./.;
         fileset = nixpkgs.lib.fileset.unions [ ./services/docker-compose.yml ./services/config ];
