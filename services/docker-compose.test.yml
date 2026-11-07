@@ -1,0 +1,123 @@
+name: services-test
+# The test stack: the stack's services a test needs, each the image docker-compose.yml pins, beside the stack and
+# apart from it: containers qitest-*, volumes services-test_*, its own network, and each host port the stack's plus
+# 10000. Wipe it whenever a test is done with docker compose down -v (stack-test down -v); it touches nothing of the
+# stack. Redis is left out: no test needs it.
+services:
+  # Redpanda, its Kafka API advertised at the test port on localhost
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v26.2.6
+    container_name: qitest-redpanda
+    command:
+      - redpanda
+      - start
+      - --kafka-addr
+      - internal://0.0.0.0:9092,external://0.0.0.0:29092
+      - --advertise-kafka-addr
+      - internal://redpanda:9092,external://localhost:29092
+      - --pandaproxy-addr
+      - internal://0.0.0.0:8082,external://0.0.0.0:28082
+      - --advertise-pandaproxy-addr
+      - internal://redpanda:8082,external://localhost:28082
+      - --schema-registry-addr
+      - internal://0.0.0.0:8081,external://0.0.0.0:28081
+      - --rpc-addr
+      - redpanda:33145
+      - --advertise-rpc-addr
+      - redpanda:33145
+      - --mode
+      - dev-container
+      - --smp
+      - '1'
+      - --default-log-level=info
+    ports:
+      - "28081:28081"
+      - "28082:28082"
+      - "29092:29092"
+      - "29644:9644"
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    networks:
+      - qitest-network
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -E 'Healthy|true'"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  # TimescaleDB, the stack's database, user and password
+  timescaledb:
+    image: timescale/timescaledb:2.30.1-pg17
+    container_name: qitest-timescaledb
+    environment:
+      POSTGRES_DB: cryptodb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "15432:5432"
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+    networks:
+      - qitest-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cryptodb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ClickHouse, the stack's user and password, no database made at start
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.8.34.13
+    container_name: qitest-clickhouse
+    environment:
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: password
+    ports:
+      - "18123:8123"
+      - "19000:9000"
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    networks:
+      - qitest-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redpanda Console, on the stack's config: redpanda is the test broker on this network.
+  # Healthy when /admin/health answers, so that up --wait waits for it too.
+  console:
+    image: docker.redpanda.com/redpandadata/console:v3.12.0
+    container_name: qitest-console
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+    ports:
+      - "18080:8080"
+    volumes:
+      - ./config/redpanda-console.yml:/tmp/config.yml:ro
+    networks:
+      - qitest-network
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/admin/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  redpanda_data:
+  timescaledb_data:
+  clickhouse_data:
+
+networks:
+  qitest-network:
+    driver: bridge
