@@ -1,0 +1,12 @@
+# the kit's: its link, the files make agents generates, a developer's own choices, a role's run in progress
+/dev/agents
+/AGENTS.md
+/CLAUDE.md
+/.claude/agents/
+/.claude/workflows/
+/.github/agents/
+/.github/hooks/kit.json
+/agents.generated
+/agents.local.json
+/agents.run/
+/.reports/

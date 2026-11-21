@@ -20,3 +20,4 @@ anything that connects to either stack or the data held in their volumes.
 |---|---|---|
 | `qi-v2` | `qi-v2-nix` | `flake.lock` |
 | `nixpkgs` | `qi-v2`, which it follows | `flake.lock` |
+| `kit` | `qi-v2-nix` | `flake.lock` |
